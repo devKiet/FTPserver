@@ -1,4 +1,32 @@
 @REM cd F:\LTMang\FTP
-cls
-g++ .\main.cpp -o main -lwininet
-.\main
+
+@echo off
+
+REM Set the path to the compiler
+set COMPILER=g++
+
+REM Set compiler flags and options
+set CXXFLAGS=-I./
+
+REM Set linker flags for libraries
+set LDFLAGS=-lwininet
+
+REM Set the source files
+set SOURCES=main.cpp FtpClient.cpp common.cpp
+
+REM Set the output executable name
+set OUTPUT=fptClient.exe
+
+REM Compile the source files
+%COMPILER% %CXXFLAGS% %SOURCES% %LDFLAGS% -o %OUTPUT%
+
+REM Check if compilation was successful
+if %ERRORLEVEL% EQU 0 (
+    echo Compilation successful.
+    @REM Run exe
+    @echo on
+    .\fptClient.exe
+) else (
+    echo Compilation failed.
+)
+

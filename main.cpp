@@ -1,111 +1,105 @@
-#include <iostream>
-#include <windows.h>
-#include <wininet.h>
-#include <tchar.h>
+#include "FTPClient.h"
+#include "common.cpp"
+#include <cstring>
 
-class FTPClient {
-public:
-    FTPClient(const TCHAR* server, const TCHAR* username, const TCHAR* password)
-        : server(server), username(username), password(password) {
-        hInternet = InternetOpen(_T("FTP testing"), INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, 0);;
-        if (hInternet == NULL) {
-            std::cerr << "InternetOpen failed, error " << GetLastError() << std::endl;
-            exit(1);
-        }
-    }
+#define MAX_PATH_LENGTH 256
+std::string filename = "conf.conf";
 
-    ~FTPClient() {
-        InternetCloseHandle(hInternet);
-    }
+/// @brief main
+/// @return 
+int main() 
+{
+    Config config = readConfigFile(filename);
 
-    bool UploadFile(const TCHAR* localPath, const TCHAR* remotePath) {
-        HINTERNET hConnect = OpenFTPConnection();
-        if (hConnect == NULL) {
-            std::cerr << "Failed to open FTP connection. Error " << GetLastError() << std::endl;
-            return false;
-        }
-
-        bool result = FtpPutFile(hConnect, localPath, remotePath, FTP_TRANSFER_TYPE_BINARY, 0) != 0;
-        PrintLastError(result, localPath, remotePath);
-        InternetCloseHandle(hConnect);
-        return result;
-    }
-
-    bool DownloadFile(const TCHAR* remotePath, const TCHAR* localPath) {
-        HINTERNET hConnect = OpenFTPConnection();
-        if (hConnect == NULL) {
-            std::cerr << "Failed to open FTP connection. Error " << GetLastError() << std::endl;
-            return false;
-        }
-
-        bool result = FtpGetFile(hConnect, remotePath, localPath, FALSE, FILE_ATTRIBUTE_NORMAL, FTP_TRANSFER_TYPE_BINARY, 0) != 0;
-        PrintLastError(result, localPath, remotePath);
-        InternetCloseHandle(hConnect);
-        return result;
-    }
-
-private:
-    HINTERNET hInternet;
-    LPCTSTR server;
-    LPCTSTR username;
-    LPCTSTR password;
-
-    HINTERNET OpenFTPConnection() {
-        return InternetConnect(hInternet, server, INTERNET_DEFAULT_FTP_PORT, username, password, INTERNET_SERVICE_FTP, INTERNET_FLAG_PASSIVE, 0);
-    }
-
-    void PrintLastError(bool result, const TCHAR* localPath, const TCHAR* remotePath)
-    {
-        if (!result) {
-            DWORD error = GetLastError();
-            std::cerr << "Failed to upload/download file. Error code: " << error << std::endl;
-            std::cerr << "Local path: " << localPath << std::endl;
-            std::cerr << "Remote path: " << remotePath << std::endl;
-        }
-    }
-};
-
-int main() {
     // Thông tin máy chủ FTP
-    const TCHAR* server = _T("ftpupload.net");
-    const TCHAR* username = _T("if0_36127269");
-    const TCHAR* password =  _T("sPBoDy5X8X");
+    const TCHAR* server = _T(config.server.c_str());
+    const TCHAR* username = _T(config.username.c_str());
+    const TCHAR* password = _T(config.password.c_str());
 
-    FTPClient ftpClient(server, username, password);
+    FTPClient* ftpClient = new FTPClient(server, username, password);
 
-    std::cout << "Choose an option:" << std::endl;
     std::cout << "1. Upload file" << std::endl;
     std::cout << "2. Download file" << std::endl;
+    std::cout << "3. Quit" << std::endl;
 
-    int option;
-    std::cin >> option;
-
-    if (option == 1) {
-        // Upload file
-        const TCHAR* localPath = _T("C:\\Users\\AD\\Downloads\\note.txt");
-        const TCHAR* remotePath = _T("note.txt");
-
-        if (fopen(localPath, "r")  == NULL)
+    while(1)
+    {   
+        std::cout << "Choose an option: ";
+        int option;
+        std::cin >> option;
+        switch (option)
         {
-            perror("Failed: ");
-            return 1;
+        case 1:
+        {
+            TCHAR localPath[MAX_PATH_LENGTH];
+            TCHAR remotePath[MAX_PATH_LENGTH];
+
+            std::cout << "Enter local path: ";
+            std::cin >> localPath;
+
+            std::cout << "Enter remote path: ";
+            std::cin >> remotePath;
+
+            if (std::strlen(localPath) >= MAX_PATH_LENGTH || std::strlen(remotePath) >= MAX_PATH_LENGTH) 
+            {
+                std::cerr << "Path length exceeds the maximum allowed length of " << MAX_PATH_LENGTH << " characters." << std::endl;
+                break;
+            }
+
+            if (fopen(localPath, "r")  == NULL) 
+            {
+                perror("Failed: ");
+                continue;
+            }
+
+            if (ftpClient->UploadFile(localPath, remotePath)) 
+            {
+                std::cout << "File uploaded successfully\n";
+            }
+            else
+            {
+                std::cerr << "Failed to upload file\n";
+            }
+            break;
         }
-        if (ftpClient.UploadFile(localPath, remotePath)) {
-            std::cout << "File uploaded successfully\n";
-        } else {
-            std::cerr << "Failed to upload file\n";
+        case 2:
+        {
+            TCHAR localPath[MAX_PATH_LENGTH];
+            TCHAR remotePath[MAX_PATH_LENGTH];
+            
+            std::cout << "Enter remote path: ";
+            std::cin >> remotePath;
+
+            std::cout << "Enter local path: ";
+            std::cin >> localPath;
+
+            if (std::strlen(localPath) >= MAX_PATH_LENGTH || std::strlen(remotePath) >= MAX_PATH_LENGTH) 
+            {
+                std::cerr << "Path length exceeds the maximum allowed length of " << MAX_PATH_LENGTH << " characters." << std::endl;
+                break;
+            }
+            
+            if (ftpClient->DownloadFile(remotePath, localPath))
+            {
+                std::cout << "File downloaded successfully\n";
+            }
+            else
+            {
+                std::cerr << "Failed to download file\n";
+            }
+            break;
         }
-    } else if (option == 2) {
-        // Download file
-        const TCHAR* remotePath = _T("note.txt");
-        const TCHAR* localPath = _T("C:\\Users\\AD\\Downloads\\note.txt");
-        if (ftpClient.DownloadFile(remotePath, localPath)) {
-            std::cout << "File downloaded successfully\n";
-        } else {
-            std::cerr << "Failed to download file\n";
+        case 3:
+        {
+            delete ftpClient;
+            return 0;
         }
-    } else {
-        std::cerr << "Invalid option\n";
+        default:
+        {
+            std::cerr << "Invalid option\n";
+            break;
+        }
+        }
     }
 
     return 0;
