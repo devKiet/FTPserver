@@ -1,9 +1,10 @@
 #include "FTPClient.h"
 #include "common.cpp"
 #include <cstring>
+#include <limits>
 
 #define MAX_PATH_LENGTH 256
-std::string filename = "conf.conf";
+std::string filename = "./conf/conf.config";
 
 /// @brief main
 /// @return 
@@ -11,6 +12,10 @@ int main()
 {
     Config config = readConfigFile(filename);
 
+    if (config.password.empty() || config.username.empty() || config.password.empty())
+    {
+        return 0;
+    }
     // Thông tin máy chủ FTP
     const TCHAR* server = _T(config.server.c_str());
     const TCHAR* username = _T(config.username.c_str());
@@ -25,11 +30,12 @@ int main()
     while(1)
     {   
         std::cout << "Choose an option: ";
-        int option;
+        char option;
         std::cin >> option;
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         switch (option)
         {
-        case 1:
+        case '1':
         {
             TCHAR localPath[MAX_PATH_LENGTH];
             TCHAR remotePath[MAX_PATH_LENGTH];
@@ -62,7 +68,7 @@ int main()
             }
             break;
         }
-        case 2:
+        case '2':
         {
             TCHAR localPath[MAX_PATH_LENGTH];
             TCHAR remotePath[MAX_PATH_LENGTH];
@@ -89,7 +95,7 @@ int main()
             }
             break;
         }
-        case 3:
+        case '3':
         {
             delete ftpClient;
             return 0;

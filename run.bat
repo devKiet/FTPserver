@@ -6,13 +6,13 @@ REM Set the path to the compiler
 set COMPILER=g++
 
 REM Set compiler flags and options
-set CXXFLAGS=-I./
+set CXXFLAGS=-I./src/
 
 REM Set linker flags for libraries
 set LDFLAGS=-lwininet
 
 REM Set the source files
-set SOURCES=main.cpp FtpClient.cpp common.cpp
+set SOURCES=./src/main.cpp ./src/FtpClient.cpp ./src/common.cpp
 
 REM Set the output executable name
 set OUTPUT=fptClient.exe
